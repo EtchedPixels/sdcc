@@ -717,7 +717,7 @@ processFile (char *s)
 
   /* if the extension is type rel_ext
      additional object file will be passed to the linker */
-  if (STRCASECMP (extp, port->linker.rel_ext) == 0 ||
+  if (STRCASECMP (extp, port->linker.rel_ext) == 0) ||
     STRCASECMP (extp, ".o") == 0)
     {
       dbuf_destroy (&ext);
