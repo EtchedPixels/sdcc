@@ -1915,7 +1915,6 @@ emitStaticSeg (memmap *map, struct dbuf_s *oBuf)
                   emitDebugSym (oBuf, sym);
                   dbuf_printf (oBuf, " == .\n");
                 }
-              dbuf_printf (oBuf, "%s:\n", sym->rname);
               /* special case for character strings */
               if (IS_ARRAY (sym->type) &&
                 (IS_CHAR (sym->type->next) && SPEC_CVAL (sym->etype).v_char ||
