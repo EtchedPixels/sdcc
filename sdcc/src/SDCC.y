@@ -299,11 +299,9 @@ function_attributes
                             int regnum;
 
                             if (!port->getRegByName || ((regnum = port->getRegByName(regsym->name)) < 0))
-                              {
-                                werror (W_UNKNOWN_REG);
-                                break;
-                              }
-                            $$->funcAttrs.preserved_regs[regnum] = TRUE;
+                              werror (W_UNKNOWN_REG, regsym->name);
+                            else
+                              $$->funcAttrs.preserved_regs[regnum] = TRUE;
                           }
                      }
    ;

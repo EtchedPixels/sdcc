@@ -1,3 +1,32 @@
+2018-06-05 Erik Petrich <epetrich AT ivorytower.norman.ok.us>
+
+	* src/z80/peeph-z80.def: fixed peephole rule 153 (possibly fix for
+	  bug #2754)
+
+2018-06-04 Philipp Klaus Krause <pkk AT spth.de>
+
+	* sdas/asz80/z80.h,
+	  sdas/asz80/z80adr.c,
+	  sdas/asz80/z80mch.c,
+	  sdas/asz80/z80pst.c:
+	  Assembler support for ZX Spectrum Next opcodes: Patch by pauloscustodio.
+
+2018-06-04 Erik Petrich <epetrich AT ivorytower.norman.ok.us>
+
+	* src/SDCCast.c (expandInlineFuncs): fix bug #2752
+	* support/regression/tests/bug-2752.c: enable test
+
+2018-06-01 Erik Petrich <epetrich AT ivorytower.norman.ok.us>
+
+	* support/scripts/sdcc.nsi: mingw-w64 needs libwinpthread-1.dll
+	* support/scripts/sdcc.nsi: add stm8-large library to setup.exe package
+
+2018-05-28 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/SDCC.y,
+	  src/SDCCerr.c:
+	  Improve behaviour on unknown register specifications.
+
 2018-05-27 Philipp Klaus Krause <pkk AT spth.de>
 
 	* support/regression/tests/bug-2752.c:
