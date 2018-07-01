@@ -497,7 +497,8 @@ packRegsForOneuse (iCode *ic, operand **opp, eBBlock *ebp)
     bitVectUnSetBit (nic->rlive, op->key);
 
   remiCodeFromeBBlock (ebp, dic);
-  hTabDeleteItem (&iCodehTab, ic->key, ic, DELETE_ITEM, NULL);
+
+  hTabDeleteItem (&iCodehTab, dic->key, ic, DELETE_ITEM, NULL);
   
   return 1;
 }
@@ -749,10 +750,10 @@ void stm8_init_asmops (void);
 /* assignRegisters - assigns registers to each live range as need  */
 /*-----------------------------------------------------------------*/
 void
-stm8_assignRegisters (ebbIndex * ebbi)
+stm8_assignRegisters (ebbIndex *ebbi)
 {
   eBBlock **ebbs = ebbi->bbOrder;
-  int i, count = ebbi->count;
+  int count = ebbi->count;
   iCode *ic;
 
   stm8_init_asmops();
@@ -761,7 +762,7 @@ stm8_assignRegisters (ebbIndex * ebbi)
 
   /* change assignments this will remove some
      live ranges reducing some register pressure */
-  for (i = 0; i < count; i++)
+  for (int i = 0; i < count; i++)
     packRegisters (ebbs[i]);
 
   /* liveranges probably changed by register packing

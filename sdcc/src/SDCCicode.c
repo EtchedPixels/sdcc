@@ -38,7 +38,7 @@ int iCodeKey = 0;
 char *filename;                 /* current file name */
 int lineno = 1;                 /* current line number */
 int block;
-int scopeLevel;
+long scopeLevel;
 int seqPoint;
 int inCriticalPair = 0;
 
@@ -2159,7 +2159,7 @@ geniCodeRightShift (operand *left, operand *right);
 /* geniCodeDivision - gen intermediate code for division           */
 /*-----------------------------------------------------------------*/
 static operand *
-geniCodeDivision (operand *left, operand *right, RESULT_TYPE resultType)
+geniCodeDivision (operand *left, operand *right, RESULT_TYPE resultType, bool ptrdiffdiv)
 {
   iCode *ic;
   int p2 = 0;
@@ -2169,12 +2169,24 @@ geniCodeDivision (operand *left, operand *right, RESULT_TYPE resultType)
   sym_link *ltype = operandType (left);
   sym_link *letype = getSpec (ltype);
 
+/* if the right is a literal & power of 2 and left is unsigned then
+   make it a right shift.
+   For pointer division, there can be no remainder, so we can make
+   it a right shift, too. */
+   
+  if (IS_LITERAL (retype) &&
+      (!IS_FLOAT (letype) && !IS_FIXED (letype) && IS_UNSIGNED (letype) || ptrdiffdiv) &&
+      ((p2 = powof2 ((TYPE_TARGET_ULONG) ulFromVal (OP_VALUE (right)))) > 0))
+    {
+      ic = newiCode (RIGHT_OP, left, operandFromLit (p2));      /* right shift */
+    }
   /* if the right is a literal & power of 2
      and left is signed then make it a conditional addition
      followed by right shift */
-  if (IS_LITERAL (retype) &&
+  else if (IS_LITERAL (retype) &&
       !IS_FLOAT (letype) &&
-      !IS_FIXED (letype) && !IS_UNSIGNED (letype) && ((p2 = powof2 ((TYPE_TARGET_ULONG) ulFromVal (OP_VALUE (right)))) > 0) &&
+      !IS_FIXED (letype) && !IS_UNSIGNED (letype) &&
+      ((p2 = powof2 ((TYPE_TARGET_ULONG) ulFromVal (OP_VALUE (right)))) > 0) &&
       (TARGET_Z80_LIKE || TARGET_HC08_LIKE))
     {
       operand *tmp;
@@ -2190,16 +2202,7 @@ geniCodeDivision (operand *left, operand *right, RESULT_TYPE resultType)
       geniCodeLabel (label);
       return (geniCodeCast (resType, geniCodeRightShift (tmp, operandFromLit (p2)), TRUE));
     }
-  /* if the right is a literal & power of 2
-     and left is unsigned then make it a
-     right shift */
-  else
-       if (IS_LITERAL (retype) &&
-      !IS_FLOAT (letype) &&
-      !IS_FIXED (letype) && IS_UNSIGNED (letype) && ((p2 = powof2 ((TYPE_TARGET_ULONG) ulFromVal (OP_VALUE (right)))) > 0))
-    {
-      ic = newiCode (RIGHT_OP, left, operandFromLit (p2));      /* right shift */
-    }
+  
   else
     {
       ic = newiCode ('/', left, right); /* normal division */
@@ -2269,8 +2272,7 @@ subtractExit:
       return result;
     }
 
-  // should we really do this? is this ANSI?
-  return geniCodeDivision (result, operandFromLit (getSize (ltype->next)), FALSE);
+  return geniCodeDivision (result, operandFromLit (getSize (ltype->next)), FALSE, true);
 }
 
 /*-----------------------------------------------------------------*/
@@ -4330,7 +4332,7 @@ ast2iCode (ast * tree, int lvl)
 
     case '/':
       return geniCodeDivision (geniCodeRValue (left, FALSE),
-                               geniCodeRValue (right, FALSE), getResultTypeFromType (tree->ftype));
+                               geniCodeRValue (right, FALSE), getResultTypeFromType (tree->ftype), false);
 
     case '%':
       return geniCodeModulus (geniCodeRValue (left, FALSE), geniCodeRValue (right, FALSE), getResultTypeFromType (tree->ftype));
@@ -4466,9 +4468,8 @@ ast2iCode (ast * tree, int lvl)
     case DIV_ASSIGN:
       return
         geniCodeAssign (left,
-                        geniCodeDivision (geniCodeRValue (operandFromOperand (left),
-                                                          FALSE),
-                                          geniCodeRValue (right, FALSE), getResultTypeFromType (tree->ftype)), 0, 1);
+                        geniCodeDivision (geniCodeRValue (operandFromOperand (left), FALSE),
+                                          geniCodeRValue (right, FALSE), getResultTypeFromType (tree->ftype), false), 0, 1);
     case MOD_ASSIGN:
       return
         geniCodeAssign (left,
