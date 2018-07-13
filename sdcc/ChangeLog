@@ -1,3 +1,47 @@
+2018-07-13 Philipp Klaus Krause <krauseph AT informatik.uni-freiburg.de>
+
+	* src/z80/peep.c,
+	  support/regression/tests/bug-2771.c:
+	  Fix bug #2771.
+	* src/SDCClospre.cc:
+	  Improve lospre debug output.
+
+2018-07-12 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/z80/gen.c,
+	  support/regression/tests/bug-2770.c:
+	  Fix bug #2770.
+	* device/include/mcs51/ax8052.h,
+	  device/include/mcs51/ax8052f131.h,
+	  device/include/mcs51/ax8052f142.h,
+	  device/include/mcs51/ax8052f143.h,
+	  device/include/mcs51/ax8052f151.h,
+	  device/include/mcs51/compiler.h:
+	  Headers for Axsem 8052, patch #166 by Thomas Sailer.
+
+2018-07-05 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/SDCClospre.hpp:
+	  Fix bug #2748.
+	* src/SDCCcse.h,
+	  src/SDCCdebug.c,
+	  src/SDCCglue.c,
+	  src/SDCCpeeph.c,
+	  src/SDCCsymt.c,
+	  src/SDCCsymt.h:
+	  Improve code quality fixing a few gcc -pedantic warnings.
+
+2018-07-03 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/z80/gen.c,
+	  support/regression/tests/bug-2767.c:
+	  Fix bug #2767.
+
+2018-07-02 Philipp Klaus Krause <pkk AT spth.de>
+
+	* support/regression/tests/bug-2764.c:
+	  Fix test for systems with int wider than 16 bits.
+
 2018-06-28 Philipp Klaus Krause <pkk AT spth.de>
 
 	* support/regression/tests/bug-2764.c,

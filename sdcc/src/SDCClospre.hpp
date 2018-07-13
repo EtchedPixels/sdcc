@@ -43,9 +43,6 @@ extern "C"
 
 typedef std::set<unsigned short int> lospreset_t;
 
-// #define DEBUG_LOSPRE
-// #define DEBUG_LOSPRE_ASS
-
 struct assignment_lospre
 {
   boost::tuple<float, float> s; // First entry: Calculation costs, second entry: Lifetime costs.
@@ -532,7 +529,7 @@ int tree_dec_safety_nodes(T_t &T, typename boost::graph_traits<T_t>::vertex_desc
 }
 
 template <class T_t, class G_t>
-static void split_edge(T_t &T, G_t &G, typename boost::graph_traits<G_t>::edge_descriptor e, const iCode *ic, operand *tmpop)
+typename boost::graph_traits<G_t>::vertex_descriptor split_edge(T_t &T, G_t &G, typename boost::graph_traits<G_t>::edge_descriptor e, const iCode *ic, operand *tmpop)
 {
   // Insert new iCode into chain.
   iCode *newic = newiCode (ic->op, IC_LEFT (ic), IC_RIGHT (ic));
@@ -556,6 +553,7 @@ static void split_edge(T_t &T, G_t &G, typename boost::graph_traits<G_t>::edge_d
 
   G[n].ic = newic;
   G[n].uses = false;
+  G[n].invalidates = false;
   boost::add_edge(boost::source(e, G), n, G[e], G);
   boost::add_edge(n, boost::target(e, G), G[e], G);
 
@@ -584,6 +582,8 @@ static void split_edge(T_t &T, G_t &G, typename boost::graph_traits<G_t>::edge_d
 
   // Remove old edge from cfg.
   boost::remove_edge(e, G);
+
+  return(n);
 }
 
 
@@ -657,7 +657,7 @@ static void forward_lospre_assignment(G_t &G, typename boost::graph_traits<G_t>:
           adjacency_iter_t c, c_end;
           for(boost::tie(c, c_end) = boost::adjacent_vertices(i, G); c != c_end; ++c)
             {
-              if(!((a.global[i] & true) && !G[i].invalidates) && (a.global[*c] & true)) // Calculation edge
+              if(!(a.global[i] && !G[i].invalidates) && a.global[*c]) // Calculation edge
                 continue;
               forward_lospre_assignment(G, *c, ic, a);
             }
@@ -667,14 +667,14 @@ static void forward_lospre_assignment(G_t &G, typename boost::graph_traits<G_t>:
       boost::tie(c, c_end) = adjacent_vertices(i, G);
       if(c == c_end)
         break;
-      if(!((a.global[i] & true) && !G[i].invalidates) && (a.global[*c] & true)) // Calculation edge
+      if(!(a.global[i] && !G[i].invalidates) && a.global[*c]) // Calculation edge
         break;
       i = *c;
     }
 }
 
 template <class T_t, class G_t>
-static int implement_lospre_assignment(const assignment_lospre a, T_t &T, G_t &G, const iCode *ic) // Assignment has to be passed as a copy (not reference), since the transformations on the tree-decomposition will invalidate it otherwise.
+static int implement_lospre_assignment(assignment_lospre a, T_t &T, G_t &G, const iCode *ic) // Assignment has to be passed as a copy (not reference), since the transformations on the tree-decomposition will invalidate it otherwise.
 {
   operand *tmpop;
   unsigned substituted = 0, split = 0;
@@ -702,7 +702,9 @@ static int implement_lospre_assignment(const assignment_lospre a, T_t &T, G_t &G
 
   for(typename std::set<edge_desc_t>::iterator i = calculation_edges.begin(); i != calculation_edges.end(); ++i)
   {
-    split_edge(T, G, *i, ic, tmpop);
+    typename boost::graph_traits<G_t>::vertex_descriptor n = split_edge(T, G, *i, ic, tmpop);
+    a.global.resize(boost::num_vertices(G));
+    a.global[n] = true;
     split++;
   }
 
@@ -719,7 +721,7 @@ static int implement_lospre_assignment(const assignment_lospre a, T_t &T, G_t &G
       if(!((a.global[*v] & true) && !G[*v].invalidates || boost::source(*e, G) < a.global.size() && (a.global[boost::source(*e, G)] & true)))
         continue;
 #ifdef DEBUG_LOSPRE
-      std::cout << "Substituting ic " << G[*v].ic->key << "\n";
+      std::cerr << "Substituting ic " << G[*v].ic->key << "\n";
 #endif
       substituted++;
 
