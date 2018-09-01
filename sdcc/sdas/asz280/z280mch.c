@@ -484,7 +484,7 @@ struct mne *mp;
 /*	char *ipsav;		not used ARB/JRC */
 	int i;
 	
-	instr = mp->m_type;
+	instr = (unsigned char)mp->m_type;
 
 #if DEBUG
 	PRINTF("\n%d  instr %d (%s)   mchtyp %d    AND %d\n", (int)pass, (int)instr, mp->m_id,
