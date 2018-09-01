@@ -30,32 +30,11 @@
 
 	.globl _abs
 
-; 12B; 86T for nonnegative arguments, 78T for negative.
+	.z280
+
 _abs:
-	pop	hl
-	pop	de
-	push	de
-	push	hl
-	xor	a, a
-	ld	l, a
-	ld	h, a
-	sbc	hl, de
-	ret	P
-	ex	de, hl
+	ld	hl,(sp+2)
+	bit	7,h
+	ret	z
+	neg	hl
 	ret
-
-; 14B; 59T for nonegative arguments, 94T for negative:
-;_abs:
-;	pop	de
-;	pop	hl
-;	push	hl
-;	push	de
-;	bit	7, h
-;	ret	Z
-;	xor	a, a
-;	ld	e, a
-;	ld	d, a
-;	ex	de, hl
-;	sbc	hl, de
-;	ret
-
