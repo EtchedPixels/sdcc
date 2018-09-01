@@ -35,7 +35,7 @@
  *  Include the oddball 2 argument shift/rotate instructions
  *    (0 for strict Z80, 1 for 'sdasz80/asz80' compatibility)
  */
-#define ODDBALL_SHIFT_ROTATE 0
+#define ODDBALL_SHIFT_ROTATE 1
 
 
 /*
