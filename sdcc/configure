@@ -651,6 +651,7 @@ OPT_DISABLE_TLCS90
 OPT_DISABLE_GBZ80
 OPT_DISABLE_R3KA
 OPT_DISABLE_R2K
+OPT_DISABLE_Z280
 OPT_DISABLE_Z180
 OPT_DISABLE_Z80
 OPT_DISABLE_MCS51
@@ -727,7 +728,6 @@ infodir
 docdir
 oldincludedir
 includedir
-runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -754,6 +754,7 @@ with_ccache
 enable_mcs51_port
 enable_z80_port
 enable_z180_port
+enable_z280_port
 enable_r2k_port
 enable_r3ka_port
 enable_gbz80_port
@@ -843,7 +844,6 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
-runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE}'
@@ -1096,15 +1096,6 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
-  -runstatedir | --runstatedir | --runstatedi | --runstated \
-  | --runstate | --runstat | --runsta | --runst | --runs \
-  | --run | --ru | --r)
-    ac_prev=runstatedir ;;
-  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
-  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
-  | --run=* | --ru=* | --r=*)
-    runstatedir=$ac_optarg ;;
-
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1242,7 +1233,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir runstatedir
+		libdir localedir mandir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1395,7 +1386,6 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
-  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -1435,6 +1425,7 @@ Optional Features:
   --disable-mcs51-port    Excludes the Intel mcs51 port
   --disable-z80-port      Excludes the Z80 port
   --disable-z180-port     Excludes the Z180 port
+  --disable-z280-port     Excludes the Z280 port
   --disable-r2k-port      Excludes the Rabbit 2000 port
   --disable-r3ka-port     Excludes the Rabbit 3000A port
   --disable-gbz80-port    Excludes the Gameboy gbz80 port
@@ -7860,6 +7851,32 @@ _ACEOF
   fi
 
 
+  # Check whether --enable-z280-port was given.
+if test "${enable_z280_port+set}" = set; then :
+  enableval=$enable_z280_port;
+fi
+
+
+  if test "$enable_z280_port" = "no"; then
+    OPT_DISABLE_Z280=1
+  else
+    enable_z280_port="yes"
+    OPT_DISABLE_Z280=0
+  fi
+
+
+cat >>confdefs.h <<_ACEOF
+#define OPT_DISABLE_Z280 $OPT_DISABLE_Z280
+_ACEOF
+
+
+
+  echo z80 >>ports.all
+  if test $OPT_DISABLE_Z280 = 0; then
+    echo z80 >>ports.build
+  fi
+
+
   # Check whether --enable-r2k-port was given.
 if test "${enable_r2k_port+set}" = set; then :
   enableval=$enable_r2k_port;
@@ -8738,6 +8755,13 @@ if test $OPT_DISABLE_Z80 = 0 || test $OPT_DISABLE_Z180 = 0; then
 
 fi
 
+if test $OPT_DISABLE_Z280 = 0; then
+  ac_config_files="$ac_config_files sdas/asz280/Makefile"
+
+  test $OPT_DISABLE_DEVICE_LIB = 0 && ac_config_files="$ac_config_files device/lib/z280/Makefile"
+
+fi
+
 if test $OPT_DISABLE_R2K = 0 || test $OPT_DISABLE_R3KA = 0; then
   ac_config_files="$ac_config_files sdas/asrab/Makefile"
 
@@ -9493,6 +9517,8 @@ do
     "sdas/asz80/Makefile") CONFIG_FILES="$CONFIG_FILES sdas/asz80/Makefile" ;;
     "device/lib/z80/Makefile") CONFIG_FILES="$CONFIG_FILES device/lib/z80/Makefile" ;;
     "device/lib/z180/Makefile") CONFIG_FILES="$CONFIG_FILES device/lib/z180/Makefile" ;;
+    "sdas/asz280/Makefile") CONFIG_FILES="$CONFIG_FILES sdas/asz280/Makefile" ;;
+    "device/lib/z280/Makefile") CONFIG_FILES="$CONFIG_FILES device/lib/z280/Makefile" ;;
     "sdas/asrab/Makefile") CONFIG_FILES="$CONFIG_FILES sdas/asrab/Makefile" ;;
     "device/lib/r2k/Makefile") CONFIG_FILES="$CONFIG_FILES device/lib/r2k/Makefile" ;;
     "device/lib/r3ka/Makefile") CONFIG_FILES="$CONFIG_FILES device/lib/r3ka/Makefile" ;;
@@ -10497,6 +10523,7 @@ sdcc ${VERSION} is now configured for
     pic16               ${enable_pic16_port}
     z80                 ${enable_z80_port}
     z180                ${enable_z180_port}
+    z280                ${enable_z280_port}
     r2k                 ${enable_r2k_port}
     r3ka                ${enable_r3ka_port}
     gbz80               ${enable_gbz80_port}
@@ -10567,6 +10594,7 @@ sdcc ${VERSION} is now configured for
     pic16               ${enable_pic16_port}
     z80                 ${enable_z80_port}
     z180                ${enable_z180_port}
+    z280                ${enable_z280_port}
     r2k                 ${enable_r2k_port}
     r3ka                ${enable_r3ka_port}
     gbz80               ${enable_gbz80_port}
