@@ -34,6 +34,9 @@
 .globl	__muluschar
 .globl	__mulschar
 
+	.z280
+; Z280 tweaks Alan Cox - need to improve the other cases
+
 ; operands have different sign
 
 __mulsuchar:
@@ -54,21 +57,6 @@ __muluschar:
         ld      e,(hl)
         inc     hl
         ld      c,(hl)
-        jr      signexte
-
-__mulschar:
-        ld      hl,#2+1
-        add     hl,sp
-
-        ld      e,(hl)
-        dec     hl
-        ld      c,(hl)
-
-        ;; Need to sign extend before going in.
-        ld      a,c
-        rla
-        sbc     a,a
-        ld      b,a
 signexte:
         ld      a,e
         rla
@@ -77,3 +65,9 @@ signexte:
 
         jp      __mul16
 
+
+__mulschar:
+	ld	hl,2(sp)	; H and L are the argments
+	ld	a,h
+	mult	l
+	ret

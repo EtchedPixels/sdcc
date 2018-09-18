@@ -23,26 +23,27 @@
 ;  this library does not by itself cause the resulting executable to
 ;  be covered by the GNU General Public License. This exception does
 ;  not however invalidate any other reasons why the executable file
-;   might be covered by the GNU General Public License.
+;  might be covered by the GNU General Public License.
 ;--------------------------------------------------------------------------
 
+;
+;	Tweaked for Z280 by Alan Cox
+;
 	.area   _CODE
 
 	.globl _strcpy
 
+	.z280
+
 _strcpy:
-	pop	bc
-	pop	de
-	pop	hl
-	push	hl
-	push	de
-	push	bc
-	push	de
+	ld	hl,2(sp)
+	ex	de,hl
+	ld	hl,4(sp)
 	xor	a, a
+	push	hl
 loop:
 	cp	a, (hl)
 	ldi
 	jr	NZ, loop
 	pop	hl
 	ret
-
