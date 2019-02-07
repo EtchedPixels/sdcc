@@ -296,6 +296,13 @@ cnvToFloatCast (iCode * ic, eBBlock * ebp)
       goto found;
     }
 
+  if (IS_BOOLEAN (type))
+    {
+      wassert(multypes[0][1] == UCHARTYPE);
+      func = conv[0][0][1];
+      goto found;
+    }
+
   assert (0);
 found:
 
@@ -979,7 +986,7 @@ convbuiltin (iCode *const ic, eBBlock *ebp)
       goto convert;
     }
 
-  if ((TARGET_IS_Z80 || TARGET_IS_Z180 || TARGET_IS_RABBIT) && (!strcmp (bif->name, "__builtin_memcpy") || !strcmp (bif->name, "__builtin_strncpy") || !strcmp (bif->name, "__builtin_memset")))
+  if ((TARGET_IS_Z80 || TARGET_IS_Z180 || TARGET_IS_RABBIT || TARGET_IS_EZ80_Z80) && (!strcmp (bif->name, "__builtin_memcpy") || !strcmp (bif->name, "__builtin_strncpy") || !strcmp (bif->name, "__builtin_memset")))
     {
       /* Replace iff return value is used or last parameter is not an integer constant. */
       if (bitVectIsZero (OP_USES (IC_RESULT (icc))) && IS_OP_LITERAL (IC_LEFT (lastparam)))
@@ -1095,35 +1102,48 @@ convertToFcall (eBBlock ** ebbs, int count)
 
           // Easy special case which avoids function call: modulo by a literal power
           // of two can be replaced by a bitwise AND.
-          if (ic->op == '%' && isOperandLiteral(IC_RIGHT(ic)) &&
-              IS_UNSIGNED(operandType(IC_LEFT(ic))))
+          if (ic->op == '%' && isOperandLiteral (IC_RIGHT(ic)))
             {
-              unsigned long litVal = double2ul (operandLitValue(IC_RIGHT(ic)));
+              bool us = IS_UNSIGNED (operandType (IC_LEFT(ic)));
 
-              /* modulo by 1: no remainder */
-              if (litVal == 1)
+              // Chek if left really is just an upcasted unsigned value.
+              if (!us && IS_SYMOP (IC_LEFT(ic)) && bitVectnBitsOn (OP_DEFS (IC_LEFT (ic))) == 1)
                 {
-                  ic->op = '=';
-                  IC_RIGHT (ic) = operandFromLit(0);
-                  IC_LEFT (ic) = NULL;
-                  continue;
-                }
-              // See if literal value is a power of 2.
-              while (litVal && !(litVal & 1))
-                {
-                  litVal >>= 1;
-                }
-              if (litVal)
-                {
-                  // discard lowest set bit.
-                  litVal >>= 1;
+                  iCode *dic = hTabItemWithKey (iCodehTab, bitVectFirstBit (OP_DEFS (IC_LEFT (ic))));
+
+                  if (dic && dic->op == CAST && IS_UNSIGNED (operandType (IC_RIGHT (dic))) && getSize (operandType (IC_RIGHT (dic))) < getSize (operandType (IC_RESULT (dic))))
+                    us = true;
                 }
 
-              if (!litVal)
+              if (us)
                 {
-                  ic->op = BITWISEAND;
-                  IC_RIGHT(ic) = operandFromLit(operandLitValue(IC_RIGHT(ic)) - 1);
-                  continue;
+                  unsigned long litVal = double2ul (operandLitValue (IC_RIGHT (ic)));
+    
+                  /* modulo by 1: no remainder */
+                  if (litVal == 1)
+                    {
+                      ic->op = '=';
+                      IC_RIGHT (ic) = operandFromLit (0);
+                      IC_LEFT (ic) = NULL;
+                      continue;
+                    }
+                  // See if literal value is a power of 2.
+                  while (litVal && !(litVal & 1))
+                    {
+                      litVal >>= 1;
+                    }
+                  if (litVal)
+                    {
+                      // discard lowest set bit.
+                      litVal >>= 1;
+                    }
+    
+                  if (!litVal)
+                    {
+                      ic->op = BITWISEAND;
+                      IC_RIGHT(ic) = operandFromLit (operandLitValue (IC_RIGHT (ic)) - 1);
+                      continue;
+                    }
                 }
             }
 

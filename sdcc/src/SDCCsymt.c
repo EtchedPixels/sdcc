@@ -334,7 +334,8 @@ newSymbol (const char *name, long scope)
   sym->for_newralloc = 0;
   sym->isinscope = 1;
   sym->usl.spillLoc = 0;
-  sym->div_flag_safe = 0;
+  sym->funcDivFlagSafe = 0;
+  sym->funcUsesVolatile = 1;
 
   return sym;
 }
@@ -349,6 +350,7 @@ newLink (SYM_LINK_CLASS select)
 
   p = Safe_alloc (sizeof (sym_link));
   p->xclass = select;
+  p->funcAttrs.z88dk_params_offset = 0;
 
   return p;
 }
@@ -1862,6 +1864,11 @@ checkSClass (symbol *sym, int isProto)
         if (((addr >> n) & 0xFF) < 0x80)
           werror (W_SFR_ABSRANGE, sym->name);
     }
+  else if (TARGET_Z80_LIKE && IS_ABSOLUTE (sym->etype) && SPEC_SCLS (sym->etype) == S_SFR)
+    {
+      if (SPEC_ADDR (sym->etype) > (FUNC_REGBANK (sym->type) ? 0xffff : 0xff))
+        werror (W_SFR_ABSRANGE, sym->name);
+    }
 
   /* If code memory is read only, then pointers to code memory */
   /* implicitly point to constants -- make this explicit       */
@@ -2862,7 +2869,7 @@ compareTypeExact (sym_link * dest, sym_link * src, long level)
 }
 
 /*---------------------------------------------------------------------------*/
-/* compareTypeExact - will do type check return 1 if representation is same. */
+/* compareTypeInexact - will do type check return 1 if representation is same. */
 /* Useful for redundancy elimination.                                        */
 /*---------------------------------------------------------------------------*/
 int
@@ -3244,7 +3251,7 @@ processFuncPtrArgs (sym_link * funcType)
 /* processFuncArgs - does some processing with function args       */
 /*-----------------------------------------------------------------*/
 void
-processFuncArgs (symbol * func)
+processFuncArgs (symbol *func)
 {
   value *val;
   int pNum = 1;
@@ -3285,6 +3292,11 @@ processFuncArgs (symbol * func)
     {
       int argreg = 0;
       struct dbuf_s dbuf;
+
+      if (val->sym && val->sym->name)
+        for (value *val2 = val->next; val2; val2 = val2->next)
+          if (val2->sym && val2->sym->name && !strcmp (val->sym->name, val2->sym->name))
+            werror (E_DUPLICATE_PARAMTER_NAME, val->sym->name, func->name);
 
       dbuf_init (&dbuf, 128);
       dbuf_printf (&dbuf, "%s parameter %d", func->name, pNum);

@@ -50,7 +50,8 @@ readint(const char *str)
     return(ret);
   if(!sscanf(str, "%d", &ret))
     {
-      wassertl (0, "readint() got non-integer argument.");
+      wassertl (0, "readint() got non-integer argument:");
+      fprintf (stderr, "%s\n", str);
       ret = -1;
     }
   return(ret);
@@ -115,10 +116,13 @@ isRelativeAddr(const char *what, const char *mode)
 static int
 isLabel(const char *what)
 {
-  const char *end;    
+  const char *end;
+
   end = strchr(what, '+');
   if(!end)
     end = what + strlen(what);
+  if(what[0] == '(' && !strchr(what, ','))
+    what++;
   if(what[0] == '#')
     return (what[1] == '_' || what[1] == '<' || what[1] == '>');
   return(what[0] == '_' || *(end-1) == '$');
@@ -261,12 +265,14 @@ stm8instructionSize(const lineNode *pl)
       op1start++;
     if(strstr(op1start, ",y)"))
       i++; // costs extra byte for operating with y
+    if ((ISINST(operand, "jp") || ISINST(operand, "call")) && *op1start != '(' && *op1start != '[') // jp and call are 3 bytes for direct long addressing mode.
+      return(3);
     if(isLabel(op1start))
       return(4);
     if(readint(op1start) <= 0xFF)
       return(2+i);
     /* op1 > 0xFF */
-    if((EQUALS(operand, "jp") || EQUALS(operand, "call")) && !strchr(op1start, 'y'))
+    if((ISINST(operand, "jp") || ISINST(operand, "call")) && !strchr(op1start, 'y'))
       return(3);
     return(4);
   }
@@ -407,6 +413,20 @@ stm8instructionSize(const lineNode *pl)
     else
       return(1);
   }
+
+  if(ISINST(pl->line, ".db") || ISINST(pl->line, ".byte"))
+    {
+      int i, j;
+      for(i = 1, j = 0; pl->line[j]; i += pl->line[j] == ',', j++);
+      return(i);
+    }
+
+  if(ISINST(pl->line, ".dw") || ISINST(pl->line, ".word"))
+    {
+      int i, j;
+      for(i = 1, j = 0; pl->line[j]; i += pl->line[j] == ',', j++);
+      return(i * 2);
+    }
 
   return(5); // Maximum instruction size, e.g. btjt.
 }

@@ -523,6 +523,7 @@ rliveClear (eBBlock **ebbs, int count)
 /* rlivePoint - for each point compute the ranges that are alive   */
 /* The live range is only stored for ITEMPs; the same code is used */
 /* to find use of unitialized AUTOSYMs (an ITEMP is an AUTOSYM).   */
+/* also, update funcUsesVolatile flag for current function         */
 /*-----------------------------------------------------------------*/
 static void
 rlivePoint (eBBlock ** ebbs, int count, bool emitWarnings)
@@ -530,6 +531,8 @@ rlivePoint (eBBlock ** ebbs, int count, bool emitWarnings)
   int i, key;
   eBBlock *succ;
   bitVect *alive;
+
+  bool uses_volatile = false;
 
   /* for all blocks do */
   for (i = 0; i < count; i++)
@@ -539,6 +542,8 @@ rlivePoint (eBBlock ** ebbs, int count, bool emitWarnings)
       /* for all instructions in this block do */
       for (ic = ebbs[i]->sch; ic; ic = ic->next)
         {
+          uses_volatile |= POINTER_GET (ic) && IS_VOLATILE (operandType (IC_LEFT(ic))->next) || IS_OP_VOLATILE (IC_LEFT(ic)) || IS_OP_VOLATILE (IC_RIGHT(ic));
+          uses_volatile |= POINTER_SET (ic) && IS_VOLATILE (operandType (IC_RESULT(ic))->next) || IS_OP_VOLATILE (IC_RESULT(ic));
 
 	  if (!ic->rlive)
 	    ic->rlive = newBitVect (operandKey);
@@ -681,6 +686,9 @@ rlivePoint (eBBlock ** ebbs, int count, bool emitWarnings)
 	}
 
     }
+
+  if(currFunc)
+    currFunc->funcUsesVolatile = uses_volatile;
 }
 
 /*-----------------------------------------------------------------*/
@@ -1157,13 +1165,16 @@ shortenLiveRanges (iCode *sic, ebbIndex *ebbi)
     {
       iCode *ifx = 0;
 
-      if (!ic->prev || !ic->next)
-        continue;
-
       iCode *pic = ic->prev;
       iCode *nic = ic->next;
 
+      if (!pic || !nic)
+        continue;
+
       if (ic->op == IFX || nic->op == IFX)
+        continue;
+
+      if (nic->op == IPUSH || nic->op == SEND)
         continue;
 
       if (pic->op != '=' || !IS_ITEMP (IC_RESULT (pic)) || bitVectnBitsOn (OP_DEFS (IC_RESULT (pic))) != 1)
@@ -1185,7 +1196,7 @@ shortenLiveRanges (iCode *sic, ebbIndex *ebbi)
         (POINTER_GET (nic) || isOperandGlobal (IC_LEFT (nic)) || isOperandGlobal (IC_RIGHT (nic))) && (POINTER_SET (ic) || POINTER_SET (nic) && isOperandGlobal (IC_RESULT (ic))))
         continue;
 
-      if (isOperandGlobal (IC_RIGHT (pic))) // Might result in too many globaloperands per op for backend.
+      if (isOperandGlobal (IC_RIGHT (pic))) // Might result in too many global operands per op for backend.
         continue;
 
       if (ifx = ifxForOp (IC_RESULT (nic), nic))
