@@ -80,6 +80,7 @@ VOID  machine(struct mne * mp)
         int op, t1, t2;
         struct expr e1, e2;
         int rf, v1, v2;
+        struct expr *ep;
 
         clrexpr(&e1);
         clrexpr(&e2);
@@ -276,18 +277,21 @@ VOID  machine(struct mne * mp)
         case S_SUB:  /* sub */
         case S_SBC:  /* sbc */
                 t1 = addr(&e1);
-#if 0
+
                 if (!(more())) {
                         /* handle case for implicit target of 'A' register */
-                        /* TODO */
-                        aerr( );
+                        t2 = t1;
+                        t1 = S_R8;
+                        v1 = A;
+                        v2 = (int) e1.e_addr;
+                        ep = &e1;
+                } else {
+                        comma(1);
+                        t2 = addr(&e2);
+                        v1 = (int) e1.e_addr;
+                        v2 = (int) e2.e_addr;
+                        ep = &e2;
                 }
-#endif
-                comma(1);
-                t2 = addr(&e2);
-
-                v1 = (int) e1.e_addr;
-                v2 = (int) e2.e_addr;
 
                 if ((t1 == S_R8) && (v1 == A)) {
                         if ( ((t2 == S_R8) && (v2 == A)) &&
@@ -313,11 +317,11 @@ VOID  machine(struct mne * mp)
                                  * do not need 0x7F prefix byte
                                  */
                                 outab(op|0x46);  /* 0xA0 | 0x46 => 0xE6, etc */
-                                outrb(&e2, 0);
+                                outrb(ep, 0);
                         } else
 #endif
 
-                        if (genop(0, op, &e2, 1))
+                        if (genop(0, op, ep, 1))
                                 aerr();
                         break;
                 }
