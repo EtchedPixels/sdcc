@@ -44,6 +44,9 @@ char    *dsft   = "asm";
 
 char    imtab[3] = { 0x46, 0x56, 0x5E };
 
+static const unsigned char ipset[4] = { 0x46, 0x56, 0x4E, 0x5E };
+
+
 int     r3k_mode;
 int     r4k_mode;
 /* when set, generate op-code for Rabbit-4000 instead of Rabbit 2000/3000 */
@@ -170,20 +173,18 @@ VOID  machine(struct mne * mp)
                 outab(op|v1);
                 break;
 
-#if 0
-        /* IM x set interrupt mode on Z-80 */
         /* Rabbit processor use the opcode to set interrupt level */
         case S_IM:
+                /* ipset 0-3 */
                 expr(&e1, 0);
                 abscheck(&e1);
-                if (e1.e_addr > 2) {
+                if (e1.e_addr > 3) {
                         aerr();
                         e1.e_addr = 0;
                 }
                 outab(op);
-                outab(imtab[(int) e1.e_addr]);
+                outab(ipset[e1.e_addr]);
                 break;
-#endif
 
         case S_BIT:
                 expr(&e1, 0);
@@ -1010,7 +1011,7 @@ VOID  machine(struct mne * mp)
                 }
                 aerr();
                 break;
-      
+
         case X_LJP:
         case X_LCALL:
                 /* bank jump or call for rabbit processor */
